@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Members - Library Management System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">📚 Library Management System</a>
+        <ul class="nav-links">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/branches">Branches</a></li>
+            <li><a href="/librarians">Librarians</a></li>
+            <li><a href="/books">Books</a></li>
+            <li><a href="/members" class="active">Members</a></li>
+            <li><a href="/loans">Loans</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>👥 Members</h1>
+            <button class="btn btn-primary" onclick="openModal()">+ Add Member</button>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="search-bar">
+            <input type="text" id="search-input" class="form-control" placeholder="Search by name...">
+            <button class="btn btn-primary" onclick="searchMembers()">Search</button>
+            <button class="btn" onclick="loadMembers()">Clear</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Membership Date</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="members-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Member</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="member-form" onsubmit="saveMember(event)">
+                <input type="hidden" id="member-id">
+                <div class="form-group">
+                    <label for="member-name">Name *</label>
+                    <input type="text" id="member-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="member-email">Email *</label>
+                    <input type="email" id="member-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="member-phone">Phone</label>
+                    <input type="text" id="member-phone" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="member-address">Address</label>
+                    <input type="text" id="member-address" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="member-date">Membership Date *</label>
+                    <input type="date" id="member-date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="member-type">Membership Type</label>
+                    <select id="member-type" class="form-control">
+                        <option value="Regular">Regular</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Student">Student</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Library Management System - CMPSC-363 Database Project</p>
+    </footer>
+
+    <script>
+        const API_URL = '/api/members';
+
+        async function loadMembers() {
+            try {
+                const response = await fetch(API_URL);
+                const members = await response.json();
+                renderMembers(members);
+            } catch (error) {
+                showAlert('Error loading members', 'danger');
+            }
+        }
+
+        function renderMembers(members) {
+            const tbody = document.getElementById('members-table');
+            tbody.innerHTML = members.map(member => `
+                <tr>
+                    <td>${member.memberId}</td>
+                    <td>${member.memberName}</td>
+                    <td>${member.email}</td>
+                    <td>${member.phone || '-'}</td>
+                    <td>${member.membershipDate}</td>
+                    <td><span class="badge badge-${member.membershipType === 'Premium' ? 'warning' : member.membershipType === 'Student' ? 'info' : 'success'}">${member.membershipType}</span></td>
+                    <td class="action-buttons">
+                        <button class="btn btn-warning btn-sm" onclick="editMember(${member.memberId})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteMember(${member.memberId})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function searchMembers() {
+            const name = document.getElementById('search-input').value;
+            if (!name) { loadMembers(); return; }
+            try {
+                const response = await fetch(`${API_URL}/search?name=${encodeURIComponent(name)}`);
+                const members = await response.json();
+                renderMembers(members);
+            } catch (error) {
+                showAlert('Error searching members', 'danger');
+            }
+        }
+
+        function openModal(member = null) {
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('modal-title').textContent = member ? 'Edit Member' : 'Add Member';
+            if (member) {
+                document.getElementById('member-id').value = member.memberId;
+                document.getElementById('member-name').value = member.memberName;
+                document.getElementById('member-email').value = member.email;
+                document.getElementById('member-phone').value = member.phone || '';
+                document.getElementById('member-address').value = member.address || '';
+                document.getElementById('member-date').value = member.membershipDate;
+                document.getElementById('member-type').value = member.membershipType || 'Regular';
+            } else {
+                document.getElementById('member-form').reset();
+                document.getElementById('member-id').value = '';
+                document.getElementById('member-date').value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        async function saveMember(event) {
+            event.preventDefault();
+            const id = document.getElementById('member-id').value;
+            const member = {
+                memberName: document.getElementById('member-name').value,
+                email: document.getElementById('member-email').value,
+                phone: document.getElementById('member-phone').value,
+                address: document.getElementById('member-address').value,
+                membershipDate: document.getElementById('member-date').value,
+                membershipType: document.getElementById('member-type').value
+            };
+            try {
+                const url = id ? `${API_URL}/${id}` : API_URL;
+                const response = await fetch(url, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(member)
+                });
+                if (response.ok) {
+                    showAlert(`Member ${id ? 'updated' : 'created'} successfully`, 'success');
+                    closeModal();
+                    loadMembers();
+                } else {
+                    showAlert('Error saving member', 'danger');
+                }
+            } catch (error) {
+                showAlert('Error saving member', 'danger');
+            }
+        }
+
+        async function editMember(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const member = await response.json();
+            openModal(member);
+        }
+
+        async function deleteMember(id) {
+            if (!confirm('Are you sure?')) return;
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showAlert('Member deleted', 'success');
+                    loadMembers();
+                }
+            } catch (error) {
+                showAlert('Error deleting member', 'danger');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 3000);
+        }
+
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchMembers();
+        });
+
+        loadMembers();
+    </script>
+</body>
+</html>

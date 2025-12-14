@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">📚 Library Management System</a>
+        <ul class="nav-links">
+            <li><a href="/" class="active">Dashboard</a></li>
+            <li><a href="/branches">Branches</a></li>
+            <li><a href="/librarians">Librarians</a></li>
+            <li><a href="/books">Books</a></li>
+            <li><a href="/members">Members</a></li>
+            <li><a href="/loans">Loans</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-welcome">
+            <h1>Welcome to Library Management System</h1>
+            <p>Manage your library branches, books, members, and loans efficiently</p>
+        </div>
+
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="branch-count">-</div>
+                <div class="stat-label">Branches</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="book-count">-</div>
+                <div class="stat-label">Books</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="member-count">-</div>
+                <div class="stat-label">Members</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="loan-count">-</div>
+                <div class="stat-label">Active Loans</div>
+            </div>
+        </div>
+
+        <div class="quick-links">
+            <a href="/branches" class="quick-link-card">
+                <div class="icon">🏢</div>
+                <h3>Manage Branches</h3>
+                <p>Add, edit, and view library branches</p>
+            </a>
+            <a href="/librarians" class="quick-link-card">
+                <div class="icon">👨‍💼</div>
+                <h3>Manage Librarians</h3>
+                <p>Staff management and assignments</p>
+            </a>
+            <a href="/books" class="quick-link-card">
+                <div class="icon">📖</div>
+                <h3>Manage Books</h3>
+                <p>Book catalog and inventory</p>
+            </a>
+            <a href="/members" class="quick-link-card">
+                <div class="icon">👥</div>
+                <h3>Manage Members</h3>
+                <p>Member registration and details</p>
+            </a>
+            <a href="/loans" class="quick-link-card">
+                <div class="icon">🔄</div>
+                <h3>Manage Loans</h3>
+                <p>Book borrowing and returns</p>
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Library Management System - CMPSC-363 Database Project</p>
+    </footer>
+
+    <script>
+        // Load dashboard statistics
+        async function loadStats() {
+            try {
+                const [branches, books, members, loans] = await Promise.all([
+                    fetch('/api/branches').then(r => r.json()),
+                    fetch('/api/books').then(r => r.json()),
+                    fetch('/api/members').then(r => r.json()),
+                    fetch('/api/loans/active').then(r => r.json())
+                ]);
+                
+                document.getElementById('branch-count').textContent = branches.length;
+                document.getElementById('book-count').textContent = books.length;
+                document.getElementById('member-count').textContent = members.length;
+                document.getElementById('loan-count').textContent = loans.length;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+        
+        loadStats();
+    </script>
+</body>
+</html>

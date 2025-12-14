@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loans - Library Management System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">📚 Library Management System</a>
+        <ul class="nav-links">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/branches">Branches</a></li>
+            <li><a href="/librarians">Librarians</a></li>
+            <li><a href="/books">Books</a></li>
+            <li><a href="/members">Members</a></li>
+            <li><a href="/loans" class="active">Loans</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>🔄 Loans</h1>
+            <button class="btn btn-primary" onclick="openModal()">+ New Loan</button>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="active-loans">0</div>
+                <div class="stat-label">Active Loans</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="overdue-loans">0</div>
+                <div class="stat-label">Overdue</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Filter Loans</div>
+            <div class="search-bar">
+                <select id="filter-status" class="form-control" onchange="filterLoans()">
+                    <option value="">All Status</option>
+                    <option value="Active">Active</option>
+                    <option value="Returned">Returned</option>
+                    <option value="Overdue">Overdue</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Member</th>
+                        <th>Book</th>
+                        <th>Loan Date</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                        <th>Fine</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="loans-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">New Loan</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="loan-form" onsubmit="saveLoan(event)">
+                <div class="form-group">
+                    <label for="loan-member">Member *</label>
+                    <select id="loan-member" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="loan-copy">Book Copy *</label>
+                    <select id="loan-copy" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="loan-librarian">Processed By *</label>
+                    <select id="loan-librarian" class="form-control" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="loan-date">Loan Date</label>
+                    <input type="date" id="loan-date" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="loan-due">Due Date</label>
+                    <input type="date" id="loan-due" class="form-control">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Loan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Library Management System - CMPSC-363 Database Project</p>
+    </footer>
+
+    <script>
+        const API_URL = '/api/loans';
+        let allLoans = [];
+
+        async function loadDropdowns() {
+            const [members, copies, librarians] = await Promise.all([
+                fetch('/api/members').then(r => r.json()),
+                fetch('/api/copies/available').then(r => r.json()),
+                fetch('/api/librarians').then(r => r.json())
+            ]);
+
+            document.getElementById('loan-member').innerHTML = members.map(m => 
+                `<option value="${m.memberId}">${m.memberName}</option>`
+            ).join('');
+
+            document.getElementById('loan-copy').innerHTML = copies.map(c => 
+                `<option value="${c.copyId}">${c.book?.title || 'Unknown'} (Copy #${c.copyNumber}) - ${c.branch?.branchName || ''}</option>`
+            ).join('');
+
+            document.getElementById('loan-librarian').innerHTML = librarians.map(l => 
+                `<option value="${l.librarianId}">${l.librarianName}</option>`
+            ).join('');
+        }
+
+        async function loadLoans() {
+            try {
+                const [loans, activeLoans, overdueLoans] = await Promise.all([
+                    fetch(API_URL).then(r => r.json()),
+                    fetch(`${API_URL}/active`).then(r => r.json()),
+                    fetch(`${API_URL}/overdue`).then(r => r.json())
+                ]);
+                allLoans = loans;
+                document.getElementById('active-loans').textContent = activeLoans.length;
+                document.getElementById('overdue-loans').textContent = overdueLoans.length;
+                renderLoans(loans);
+            } catch (error) {
+                showAlert('Error loading loans', 'danger');
+            }
+        }
+
+        function renderLoans(loans) {
+            const tbody = document.getElementById('loans-table');
+            tbody.innerHTML = loans.map(loan => {
+                const statusClass = loan.status === 'Returned' ? 'success' : loan.status === 'Overdue' ? 'danger' : 'warning';
+                return `
+                <tr>
+                    <td>${loan.loanId}</td>
+                    <td>${loan.member?.memberName || '-'}</td>
+                    <td>${loan.bookCopy?.book?.title || '-'}</td>
+                    <td>${loan.loanDate}</td>
+                    <td>${loan.dueDate}</td>
+                    <td>${loan.returnDate || '-'}</td>
+                    <td><span class="badge badge-${statusClass}">${loan.status}</span></td>
+                    <td>$${(loan.fineAmount || 0).toFixed(2)}</td>
+                    <td class="action-buttons">
+                        ${loan.status === 'Active' ? `<button class="btn btn-success btn-sm" onclick="returnBook(${loan.loanId})">Return</button>` : ''}
+                        <button class="btn btn-danger btn-sm" onclick="deleteLoan(${loan.loanId})">Delete</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function filterLoans() {
+            const status = document.getElementById('filter-status').value;
+            if (!status) {
+                renderLoans(allLoans);
+            } else {
+                renderLoans(allLoans.filter(l => l.status === status));
+            }
+        }
+
+        function openModal() {
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('loan-form').reset();
+            const today = new Date().toISOString().split('T')[0];
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 14);
+            document.getElementById('loan-date').value = today;
+            document.getElementById('loan-due').value = dueDate.toISOString().split('T')[0];
+            loadDropdowns();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        async function saveLoan(event) {
+            event.preventDefault();
+            const loan = {
+                member: { memberId: parseInt(document.getElementById('loan-member').value) },
+                bookCopy: { copyId: parseInt(document.getElementById('loan-copy').value) },
+                librarian: { librarianId: parseInt(document.getElementById('loan-librarian').value) },
+                loanDate: document.getElementById('loan-date').value,
+                dueDate: document.getElementById('loan-due').value,
+                status: 'Active'
+            };
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(loan)
+                });
+                if (response.ok) {
+                    showAlert('Loan created successfully', 'success');
+                    closeModal();
+                    loadLoans();
+                } else {
+                    showAlert('Error creating loan - book may not be available', 'danger');
+                }
+            } catch (error) {
+                showAlert('Error creating loan', 'danger');
+            }
+        }
+
+        async function returnBook(id) {
+            if (!confirm('Mark this book as returned?')) return;
+            try {
+                const response = await fetch(`${API_URL}/${id}/return`, { method: 'PUT' });
+                if (response.ok) {
+                    const loan = await response.json();
+                    const message = loan.fineAmount > 0 
+                        ? `Book returned. Fine: $${loan.fineAmount.toFixed(2)}`
+                        : 'Book returned successfully';
+                    showAlert(message, 'success');
+                    loadLoans();
+                }
+            } catch (error) {
+                showAlert('Error returning book', 'danger');
+            }
+        }
+
+        async function deleteLoan(id) {
+            if (!confirm('Are you sure?')) return;
+            try {
+                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                showAlert('Loan deleted', 'success');
+                loadLoans();
+            } catch (error) {
+                showAlert('Error deleting loan', 'danger');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 3000);
+        }
+
+        loadLoans();
+    </script>
+</body>
+</html>

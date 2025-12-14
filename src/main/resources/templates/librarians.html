@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Librarians - Library Management System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">📚 Library Management System</a>
+        <ul class="nav-links">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/branches">Branches</a></li>
+            <li><a href="/librarians" class="active">Librarians</a></li>
+            <li><a href="/books">Books</a></li>
+            <li><a href="/members">Members</a></li>
+            <li><a href="/loans">Loans</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>👨‍💼 Librarians</h1>
+            <button class="btn btn-primary" onclick="openModal()">+ Add Librarian</button>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Position</th>
+                        <th>Branch</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="librarians-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Librarian</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="librarian-form" onsubmit="saveLibrarian(event)">
+                <input type="hidden" id="librarian-id">
+                <div class="form-group">
+                    <label for="librarian-name">Name *</label>
+                    <input type="text" id="librarian-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="librarian-email">Email *</label>
+                    <input type="email" id="librarian-email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="librarian-position">Position</label>
+                    <select id="librarian-position" class="form-control">
+                        <option value="Librarian">Librarian</option>
+                        <option value="Senior Librarian">Senior Librarian</option>
+                        <option value="Head Librarian">Head Librarian</option>
+                        <option value="Assistant">Assistant</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="librarian-branch">Branch *</label>
+                    <select id="librarian-branch" class="form-control" required></select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Library Management System - CMPSC-363 Database Project</p>
+    </footer>
+
+    <script>
+        const API_URL = '/api/librarians';
+        let branches = [];
+
+        async function loadBranches() {
+            const response = await fetch('/api/branches');
+            branches = await response.json();
+            const select = document.getElementById('librarian-branch');
+            select.innerHTML = branches.map(b => 
+                `<option value="${b.branchId}">${b.branchName}</option>`
+            ).join('');
+        }
+
+        async function loadLibrarians() {
+            try {
+                const response = await fetch(API_URL);
+                const librarians = await response.json();
+                const tbody = document.getElementById('librarians-table');
+                tbody.innerHTML = librarians.map(lib => `
+                    <tr>
+                        <td>${lib.librarianId}</td>
+                        <td>${lib.librarianName}</td>
+                        <td>${lib.email}</td>
+                        <td>${lib.position || '-'}</td>
+                        <td>${lib.branch?.branchName || '-'}</td>
+                        <td class="action-buttons">
+                            <button class="btn btn-warning btn-sm" onclick="editLibrarian(${lib.librarianId})">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteLibrarian(${lib.librarianId})">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                showAlert('Error loading librarians', 'danger');
+            }
+        }
+
+        function openModal(librarian = null) {
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('modal-title').textContent = librarian ? 'Edit Librarian' : 'Add Librarian';
+            if (librarian) {
+                document.getElementById('librarian-id').value = librarian.librarianId;
+                document.getElementById('librarian-name').value = librarian.librarianName;
+                document.getElementById('librarian-email').value = librarian.email;
+                document.getElementById('librarian-position').value = librarian.position || 'Librarian';
+                document.getElementById('librarian-branch').value = librarian.branch?.branchId || '';
+            } else {
+                document.getElementById('librarian-form').reset();
+                document.getElementById('librarian-id').value = '';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        async function saveLibrarian(event) {
+            event.preventDefault();
+            const id = document.getElementById('librarian-id').value;
+            const librarian = {
+                librarianName: document.getElementById('librarian-name').value,
+                email: document.getElementById('librarian-email').value,
+                position: document.getElementById('librarian-position').value,
+                branch: { branchId: parseInt(document.getElementById('librarian-branch').value) }
+            };
+            try {
+                const url = id ? `${API_URL}/${id}` : API_URL;
+                const response = await fetch(url, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(librarian)
+                });
+                if (response.ok) {
+                    showAlert(`Librarian ${id ? 'updated' : 'created'} successfully`, 'success');
+                    closeModal();
+                    loadLibrarians();
+                } else {
+                    showAlert('Error saving librarian', 'danger');
+                }
+            } catch (error) {
+                showAlert('Error saving librarian', 'danger');
+            }
+        }
+
+        async function editLibrarian(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const librarian = await response.json();
+            openModal(librarian);
+        }
+
+        async function deleteLibrarian(id) {
+            if (!confirm('Are you sure?')) return;
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showAlert('Librarian deleted', 'success');
+                    loadLibrarians();
+                }
+            } catch (error) {
+                showAlert('Error deleting librarian', 'danger');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 3000);
+        }
+
+        loadBranches();
+        loadLibrarians();
+    </script>
+</body>
+</html>

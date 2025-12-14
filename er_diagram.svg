@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 650">
+  <defs>
+    <style>
+      .entity { fill: #3498db; stroke: #2c3e50; stroke-width: 2; }
+      .entity-text { fill: white; font-family: Arial; font-size: 14px; font-weight: bold; }
+      .attr-text { fill: #333; font-family: Arial; font-size: 11px; }
+      .pk-text { fill: #333; font-family: Arial; font-size: 11px; text-decoration: underline; }
+      .relationship { fill: #e74c3c; stroke: #c0392b; stroke-width: 2; }
+      .rel-text { fill: white; font-family: Arial; font-size: 10px; font-weight: bold; }
+      .line { stroke: #2c3e50; stroke-width: 2; fill: none; }
+      .cardinality { fill: #2c3e50; font-family: Arial; font-size: 12px; font-weight: bold; }
+    </style>
+  </defs>
+  
+  <!-- Title -->
+  <text x="450" y="30" text-anchor="middle" font-family="Arial" font-size="20" font-weight="bold" fill="#2c3e50">Library Management System - ER Diagram</text>
+  
+  <!-- BRANCH Entity -->
+  <rect x="50" y="80" width="140" height="40" rx="5" class="entity"/>
+  <text x="120" y="105" text-anchor="middle" class="entity-text">BRANCH</text>
+  <text x="55" y="140" class="pk-text">branch_id (PK)</text>
+  <text x="55" y="155" class="attr-text">branch_name</text>
+  <text x="55" y="170" class="attr-text">address</text>
+  <text x="55" y="185" class="attr-text">phone</text>
+  
+  <!-- LIBRARIAN Entity -->
+  <rect x="50" y="280" width="140" height="40" rx="5" class="entity"/>
+  <text x="120" y="305" text-anchor="middle" class="entity-text">LIBRARIAN</text>
+  <text x="55" y="340" class="pk-text">librarian_id (PK)</text>
+  <text x="55" y="355" class="attr-text">librarian_name</text>
+  <text x="55" y="370" class="attr-text">email</text>
+  <text x="55" y="385" class="attr-text">position</text>
+  <text x="55" y="400" class="attr-text">branch_id (FK)</text>
+  
+  <!-- BOOK Entity -->
+  <rect x="380" y="80" width="140" height="40" rx="5" class="entity"/>
+  <text x="450" y="105" text-anchor="middle" class="entity-text">BOOK</text>
+  <text x="385" y="140" class="pk-text">book_id (PK)</text>
+  <text x="385" y="155" class="attr-text">isbn</text>
+  <text x="385" y="170" class="attr-text">title</text>
+  <text x="385" y="185" class="attr-text">author</text>
+  <text x="385" y="200" class="attr-text">publisher</text>
+  <text x="385" y="215" class="attr-text">publication_year</text>
+  <text x="385" y="230" class="attr-text">genre</text>
+  
+  <!-- BOOK_COPY Entity -->
+  <rect x="380" y="320" width="140" height="40" rx="5" class="entity"/>
+  <text x="450" y="345" text-anchor="middle" class="entity-text">BOOK_COPY</text>
+  <text x="385" y="380" class="pk-text">copy_id (PK)</text>
+  <text x="385" y="395" class="attr-text">copy_number</text>
+  <text x="385" y="410" class="attr-text">status</text>
+  <text x="385" y="425" class="attr-text">shelf_location</text>
+  <text x="385" y="440" class="attr-text">book_id (FK)</text>
+  <text x="385" y="455" class="attr-text">branch_id (FK)</text>
+  
+  <!-- MEMBER Entity -->
+  <rect x="710" y="80" width="140" height="40" rx="5" class="entity"/>
+  <text x="780" y="105" text-anchor="middle" class="entity-text">MEMBER</text>
+  <text x="715" y="140" class="pk-text">member_id (PK)</text>
+  <text x="715" y="155" class="attr-text">member_name</text>
+  <text x="715" y="170" class="attr-text">email</text>
+  <text x="715" y="185" class="attr-text">phone</text>
+  <text x="715" y="200" class="attr-text">address</text>
+  <text x="715" y="215" class="attr-text">membership_date</text>
+  <text x="715" y="230" class="attr-text">membership_type</text>
+  
+  <!-- LOAN Entity -->
+  <rect x="550" y="480" width="140" height="40" rx="5" class="entity"/>
+  <text x="620" y="505" text-anchor="middle" class="entity-text">LOAN</text>
+  <text x="555" y="540" class="pk-text">loan_id (PK)</text>
+  <text x="555" y="555" class="attr-text">loan_date</text>
+  <text x="555" y="570" class="attr-text">due_date</text>
+  <text x="555" y="585" class="attr-text">return_date</text>
+  <text x="555" y="600" class="attr-text">fine_amount</text>
+  <text x="555" y="615" class="attr-text">status</text>
+  <text x="555" y="630" class="attr-text">member_id, copy_id, librarian_id (FK)</text>
+  
+  <!-- Relationships -->
+  
+  <!-- Branch - Librarian (1:N) -->
+  <line x1="120" y1="185" x2="120" y2="280" class="line"/>
+  <polygon points="120,280 115,270 125,270" fill="#2c3e50"/>
+  <text x="130" y="230" class="cardinality">1:N</text>
+  
+  <!-- Branch - BookCopy -->
+  <line x1="190" y1="100" x2="280" y2="100" class="line"/>
+  <line x1="280" y1="100" x2="280" y2="340" class="line"/>
+  <line x1="280" y1="340" x2="380" y2="340" class="line"/>
+  <polygon points="380,340 370,335 370,345" fill="#2c3e50"/>
+  <text x="290" y="230" class="cardinality">1:N</text>
+  
+  <!-- Book - BookCopy (1:N) -->
+  <line x1="450" y1="230" x2="450" y2="320" class="line"/>
+  <polygon points="450,320 445,310 455,310" fill="#2c3e50"/>
+  <text x="460" y="275" class="cardinality">1:N</text>
+  
+  <!-- BookCopy - Loan (1:N) -->
+  <line x1="520" y1="380" x2="550" y2="500" class="line"/>
+  <polygon points="550,500 540,495 545,485" fill="#2c3e50"/>
+  <text x="520" y="450" class="cardinality">1:N</text>
+  
+  <!-- Member - Loan (1:N) -->
+  <line x1="780" y1="230" x2="780" y2="450" class="line"/>
+  <line x1="780" y1="450" x2="690" y2="500" class="line"/>
+  <polygon points="690,500 695,490 705,495" fill="#2c3e50"/>
+  <text x="730" y="450" class="cardinality">1:N</text>
+  
+  <!-- Librarian - Loan (1:N) -->
+  <line x1="120" y1="400" x2="120" y2="550" class="line"/>
+  <line x1="120" y1="550" x2="550" y2="510" class="line"/>
+  <polygon points="550,510 540,505 542,515" fill="#2c3e50"/>
+  <text x="300" y="540" class="cardinality">1:N</text>
+  
+  <!-- Legend -->
+  <rect x="30" y="580" width="200" height="60" fill="#f8f9fa" stroke="#dee2e6" rx="5"/>
+  <text x="40" y="600" font-family="Arial" font-size="12" font-weight="bold" fill="#2c3e50">Legend:</text>
+  <rect x="40" y="610" width="20" height="15" class="entity"/>
+  <text x="65" y="622" class="attr-text">Entity</text>
+  <text x="130" y="622" class="pk-text">Primary Key</text>
+  <text x="40" y="635" class="attr-text">→ Foreign Key Reference</text>
+</svg>

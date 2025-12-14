@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books - Library Management System</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">📚 Library Management System</a>
+        <ul class="nav-links">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/branches">Branches</a></li>
+            <li><a href="/librarians">Librarians</a></li>
+            <li><a href="/books" class="active">Books</a></li>
+            <li><a href="/members">Members</a></li>
+            <li><a href="/loans">Loans</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>📖 Books</h1>
+            <button class="btn btn-primary" onclick="openModal()">+ Add Book</button>
+        </div>
+
+        <div id="alert-container"></div>
+
+        <div class="search-bar">
+            <input type="text" id="search-input" class="form-control" placeholder="Search by title or author...">
+            <button class="btn btn-primary" onclick="searchBooks()">Search</button>
+            <button class="btn" onclick="loadBooks()">Clear</button>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>ISBN</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Publisher</th>
+                        <th>Year</th>
+                        <th>Genre</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="books-table"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Book</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="book-form" onsubmit="saveBook(event)">
+                <input type="hidden" id="book-id">
+                <div class="form-group">
+                    <label for="book-isbn">ISBN *</label>
+                    <input type="text" id="book-isbn" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="book-title">Title *</label>
+                    <input type="text" id="book-title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="book-author">Author *</label>
+                    <input type="text" id="book-author" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="book-publisher">Publisher</label>
+                    <input type="text" id="book-publisher" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="book-year">Publication Year</label>
+                    <input type="number" id="book-year" class="form-control" min="1000" max="2100">
+                </div>
+                <div class="form-group">
+                    <label for="book-genre">Genre</label>
+                    <select id="book-genre" class="form-control">
+                        <option value="">Select Genre</option>
+                        <option value="Fiction">Fiction</option>
+                        <option value="Non-Fiction">Non-Fiction</option>
+                        <option value="Science Fiction">Science Fiction</option>
+                        <option value="Fantasy">Fantasy</option>
+                        <option value="Mystery">Mystery</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Biography">Biography</option>
+                        <option value="History">History</option>
+                        <option value="Science">Science</option>
+                        <option value="Technology">Technology</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Library Management System - CMPSC-363 Database Project</p>
+    </footer>
+
+    <script>
+        const API_URL = '/api/books';
+
+        async function loadBooks() {
+            try {
+                const response = await fetch(API_URL);
+                const books = await response.json();
+                renderBooks(books);
+            } catch (error) {
+                showAlert('Error loading books', 'danger');
+            }
+        }
+
+        function renderBooks(books) {
+            const tbody = document.getElementById('books-table');
+            tbody.innerHTML = books.map(book => `
+                <tr>
+                    <td>${book.bookId}</td>
+                    <td>${book.isbn}</td>
+                    <td>${book.title}</td>
+                    <td>${book.author}</td>
+                    <td>${book.publisher || '-'}</td>
+                    <td>${book.publicationYear || '-'}</td>
+                    <td><span class="badge badge-info">${book.genre || '-'}</span></td>
+                    <td class="action-buttons">
+                        <button class="btn btn-warning btn-sm" onclick="editBook(${book.bookId})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteBook(${book.bookId})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function searchBooks() {
+            const keyword = document.getElementById('search-input').value;
+            if (!keyword) { loadBooks(); return; }
+            try {
+                const response = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(keyword)}`);
+                const books = await response.json();
+                renderBooks(books);
+            } catch (error) {
+                showAlert('Error searching books', 'danger');
+            }
+        }
+
+        function openModal(book = null) {
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('modal-title').textContent = book ? 'Edit Book' : 'Add Book';
+            if (book) {
+                document.getElementById('book-id').value = book.bookId;
+                document.getElementById('book-isbn').value = book.isbn;
+                document.getElementById('book-title').value = book.title;
+                document.getElementById('book-author').value = book.author;
+                document.getElementById('book-publisher').value = book.publisher || '';
+                document.getElementById('book-year').value = book.publicationYear || '';
+                document.getElementById('book-genre').value = book.genre || '';
+            } else {
+                document.getElementById('book-form').reset();
+                document.getElementById('book-id').value = '';
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        async function saveBook(event) {
+            event.preventDefault();
+            const id = document.getElementById('book-id').value;
+            const book = {
+                isbn: document.getElementById('book-isbn').value,
+                title: document.getElementById('book-title').value,
+                author: document.getElementById('book-author').value,
+                publisher: document.getElementById('book-publisher').value,
+                publicationYear: document.getElementById('book-year').value ? parseInt(document.getElementById('book-year').value) : null,
+                genre: document.getElementById('book-genre').value
+            };
+            try {
+                const url = id ? `${API_URL}/${id}` : API_URL;
+                const response = await fetch(url, {
+                    method: id ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(book)
+                });
+                if (response.ok) {
+                    showAlert(`Book ${id ? 'updated' : 'created'} successfully`, 'success');
+                    closeModal();
+                    loadBooks();
+                } else {
+                    showAlert('Error saving book', 'danger');
+                }
+            } catch (error) {
+                showAlert('Error saving book', 'danger');
+            }
+        }
+
+        async function editBook(id) {
+            const response = await fetch(`${API_URL}/${id}`);
+            const book = await response.json();
+            openModal(book);
+        }
+
+        async function deleteBook(id) {
+            if (!confirm('Are you sure?')) return;
+            try {
+                const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    showAlert('Book deleted', 'success');
+                    loadBooks();
+                }
+            } catch (error) {
+                showAlert('Error deleting book', 'danger');
+            }
+        }
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => container.innerHTML = '', 3000);
+        }
+
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchBooks();
+        });
+
+        loadBooks();
+    </script>
+</body>
+</html>
