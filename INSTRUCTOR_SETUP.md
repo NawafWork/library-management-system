@@ -150,7 +150,62 @@ After running `sql/sample_data.sql`, you'll have:
 
 ### Issue: "Access denied for user 'root'@'localhost'"
 
-**Solution:** Your MySQL password is incorrect. Update it in your environment variables or properties file.
+**Solution:** Your MySQL password is incorrect or not set. Here are the solutions:
+
+**Option 1: Try logging in without a password**
+
+```bash
+mysql -u root
+```
+
+If successful, set a password:
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_password';
+FLUSH PRIVILEGES;
+exit;
+```
+
+**Option 2: Reset MySQL root password (macOS/Linux)**
+
+```bash
+# Stop MySQL
+mysql.server stop  # macOS
+# OR
+sudo systemctl stop mysql  # Linux
+
+# Start in safe mode
+sudo mysqld_safe --skip-grant-tables &
+
+# Wait a few seconds, then login
+mysql -u root
+
+# Set the password
+FLUSH PRIVILEGES;
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_password';
+exit;
+
+# Stop safe mode and restart
+sudo killall mysqld
+mysql.server start  # macOS
+# OR
+sudo systemctl start mysql  # Linux
+```
+
+**Option 3: Use alternative script execution method**
+
+If you prefer not to use `-p` flag interactively:
+
+```bash
+# Run scripts directly (works if no password set)
+mysql -u root < sql/schema.sql
+mysql -u root < sql/sample_data.sql
+
+# Or specify password in command (less secure, but convenient for testing)
+mysql -u root -pyour_password < sql/schema.sql
+mysql -u root -pyour_password < sql/sample_data.sql
+```
+
+Then update your environment variables with the password you set.
 
 ### Issue: "Unknown database 'library_db'"
 
