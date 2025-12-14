@@ -53,13 +53,25 @@ source sql/sample_data.sql
 
 ## Configuration
 
-Update `src/main/resources/application.properties`:
+**IMPORTANT: Never commit database credentials to version control!**
 
-```properties
-spring.datasource.url=jdbc:mysql://localhost:3306/library_db
-spring.datasource.username=root
-spring.datasource.password=your_password
+### Option 1: Environment Variables (Recommended)
+
+Set the following environment variables before running the application:
+
+```bash
+export DB_URL=jdbc:mysql://localhost:3306/library_db
+export DB_USERNAME=your_db_username
+export DB_PASSWORD=your_db_password
 ```
+
+### Option 2: Local Properties File
+
+1. Copy `src/main/resources/application.properties.example` to `application-local.properties`
+2. Update the credentials in `application-local.properties`
+3. This file is git-ignored and will not be committed
+
+The application is configured to use environment variables by default. See `application.properties.example` for the template.
 
 ## Running the Application
 

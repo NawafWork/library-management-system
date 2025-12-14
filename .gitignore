@@ -62,6 +62,14 @@ Desktop.ini
 application-local.properties
 *.log
 
+# Environment and credentials - NEVER commit these!
+.env
+.env.local
+.env.*.local
+application-*.properties
+!application.properties
+!application.properties.example
+
 # Database
 *.db
 *.sqlite
