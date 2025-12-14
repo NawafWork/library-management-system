@@ -4,6 +4,31 @@
 
 A full-stack web application for managing library operations built with Java Spring Boot and MySQL.
 
+---
+
+## 📋 For Instructors
+
+**Quick Start:** See [INSTRUCTOR_SETUP.md](INSTRUCTOR_SETUP.md) for complete step-by-step setup instructions.
+
+**TL;DR:**
+```bash
+# 1. Setup database
+mysql -u root -p < sql/schema.sql
+mysql -u root -p < sql/sample_data.sql
+
+# 2. Set credentials
+export DB_USERNAME=root
+export DB_PASSWORD=your_password
+
+# 3. Run application
+mvn spring-boot:run
+
+# 4. Open browser
+http://localhost:8080
+```
+
+---
+
 ## Features
 
 - **Dashboard**: Overview with statistics and quick navigation
